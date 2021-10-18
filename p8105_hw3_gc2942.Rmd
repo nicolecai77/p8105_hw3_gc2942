@@ -6,11 +6,7 @@ output: github_document
 ```{r,include=FALSE}
 library(tidyverse)
 library(skimr)
-knitr::opts_chunk$set(
-  fig.width = 6,
-  fig.asp =0.6,
-  out.width = "90%"
-) 
+library(patchwork)
 
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 
@@ -57,7 +53,7 @@ instacart %>%
   summarize(frequency = n()) %>%
   filter(frequency > 10000)%>%
   arrange(frequency) %>% 
-  ggplot(aes(x = abbreviate(aisle,4), y = frequency)) +
+  ggplot(aes(x = aisle, y = frequency)) +
   geom_point(aes(color = aisle))+
   labs(title = "number of items ordered in each aisle",
        x = "aisle with more than 10000 items",
@@ -65,7 +61,8 @@ instacart %>%
   viridis::scale_color_viridis(
     name ="aisle",
     discrete = TRUE
-  )
+  ) +
+  scale_x_discrete(label = abbreviate)
   
 ```
 
@@ -95,7 +92,8 @@ instacart %>%
     names_from = order_dow,
     values_from = mean_hour
   ) %>% 
-  knitr::kable(digits = 2)
+  knitr::kable(digits = 2) 
+  
 ```
 
 There are `r nrow(instacart)` and `r ncol(instacart)` in the instacart data. 
@@ -104,21 +102,67 @@ The structure of data is shown by `str(instacart)` and gives us a preview of eac
 ## Problem 2
 
 ```{r}
-brfss_smart2010 %>% 
+brfss_df=brfss_smart2010 %>% 
   janitor::clean_names() %>%  
   filter(topic =="Overall Health") %>%  
-  select(topic,response) %>% 
   mutate(response = forcats::fct_relevel (response, "Poor", "Fair","Good","Very good","Excellent")) %>% 
   arrange(response)
   
 ```
 ```{r,warning=FALSE}
-brfss_smart2010 %>% 
-  janitor::clean_names() %>% 
-  select(year,locationabbr,locationdesc) %>% 
-  filter(year == c(2002,2010)) %>% 
-  group_by(year,locationabbr)
+brfss_df %>% 
+  filter(year == c("2002","2010")) %>% 
+  group_by(year,locationabbr) %>%
+  distinct(year,locationdesc) %>% 
+  summarize(frequency = n()) %>% 
+  filter(frequency >= 7)
 ```
+In 2002, CT,MA,FL,NC,NJ,PA were observed at 7 or more locations. 
+In 2010, CA,CO,FL,MA,MD,NC,NE,NJ,NY,OH,PA,SC,TX,WA were observed at 7 or more locations.
+
+```{r,warning = FALSE}
+brfss_df %>% 
+  filter(response == "Excellent") %>% 
+  group_by(year,locationabbr) %>% 
+  summarize(data_value = mean(data_value)) %>% 
+  ggplot(aes(x = year, y=data_value,color =locationabbr)) + geom_point() + geom_line() + labs(
+    title = "Average Data Value Plot",
+    x = "year",
+    y ="mean",
+    caption = "Data from the p8105 datasets package"
+  ) +
+  scale_color_hue(name = "locationabbr", h =c(100,300))
+```
+
+
+```{r}
+brfss_2006 = brfss_df %>% 
+  filter(year == "2006", locationabbr == "NY") %>% 
+  group_by(locationdesc,response) %>% 
+  ggplot(aes(x = response,y = data_value, color = locationdesc)) +
+  geom_point() +
+  labs(
+   title = "Distribution Plot in 2006",
+    x = "responses",
+    y ="data value") +
+  theme(legend.position = "none")
+
+brfss_2010 = brfss_df %>% 
+  filter(year == "2010", locationabbr == "NY") %>% 
+  group_by(locationdesc,response) %>% 
+  ggplot(aes(x = response,y = data_value, color = locationdesc)) +
+  geom_point() +
+  labs(
+   title = "Distribution Plot in 2010",
+    x = "responses",
+    y ="data value",
+    caption = "Data from the p8105 datasets package") +
+  theme(legend.position = "bottom")
+
+brfss_2006 + brfss_2010
+
+```
+
 
 
 
