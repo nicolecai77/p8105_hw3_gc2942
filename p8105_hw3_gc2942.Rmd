@@ -100,3 +100,26 @@ instacart %>%
 
 There are `r nrow(instacart)` and `r ncol(instacart)` in the instacart data. 
 The structure of data is shown by `str(instacart)` and gives us a preview of each column. The key variables are `r names(instacart)`. If we want some observations of data set, we can  look at `r skim(instacart)`.
+
+## Problem 2
+
+```{r}
+brfss_smart2010 %>% 
+  janitor::clean_names() %>%  
+  filter(topic =="Overall Health") %>%  
+  select(topic,response) %>% 
+  mutate(response = forcats::fct_relevel (response, "Poor", "Fair","Good","Very good","Excellent")) %>% 
+  arrange(response)
+  
+```
+```{r,warning=FALSE}
+brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  select(year,locationabbr,locationdesc) %>% 
+  filter(year == c(2002,2010)) %>% 
+  group_by(year,locationabbr)
+```
+
+
+
+
