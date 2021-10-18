@@ -1,0 +1,102 @@
+---
+title: "P8105_hw3_gc2942"
+output: github_document
+---
+## Problem 1
+```{r,include=FALSE}
+library(tidyverse)
+library(skimr)
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp =0.6,
+  out.width = "90%"
+) 
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+```{r setup}
+library(p8105.datasets)
+data("instacart")
+data("brfss_smart2010")
+library(skimr)
+```
+
+1. There are 134 aisles in the data set. Fresh vegetables aisle are the most items order from.
+```{r}
+instacart %>% 
+  janitor::clean_names() %>% 
+  group_by(aisle_id) %>% 
+  summarize(n_obs = n())
+```
+
+```{r}
+
+instacart %>% 
+  janitor::clean_names() %>% 
+  group_by(aisle) %>% 
+  summarize(frequency = n()) %>% 
+  mutate(aisle_rank = min_rank(desc(frequency))) %>% 
+  filter(aisle_rank == 1)
+
+```
+
+
+2. Fresh fruit and fresh vegetables are the most popular aisles that people buy.
+```{r}
+instacart %>% 
+  group_by(aisle) %>% 
+  summarize(frequency = n()) %>%
+  filter(frequency > 10000)%>%
+  arrange(frequency) %>% 
+  ggplot(aes(x = abbreviate(aisle,4), y = frequency)) +
+  geom_point(aes(color = aisle))+
+  labs(title = "number of items ordered in each aisle",
+       x = "aisle with more than 10000 items",
+       y = "number of items ordered") +
+  viridis::scale_color_viridis(
+    name ="aisle",
+    discrete = TRUE
+  )
+  
+```
+
+
+3. The most popular items in baking ingredients are light brown sugar,pure baking sodaand cane sugar. The most popular items in dog food care are snack sticks chicken &rice recipe dag treats, organix chicken & brown rice recipe, and small dog biscuits. The most popualar items in packaged vegetable fruits are oganic baby spinach, organic raspberries, and organic blueberries.
+```{r}
+instacart %>% 
+  select(aisle_id,aisle,product_name) %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  group_by(aisle,product_name) %>% 
+  summarize(number_of_times = n()) %>% 
+  mutate(product_rank = min_rank(desc(number_of_times))) %>% 
+  filter(product_rank %in% c(1,2,3)) %>% 
+  arrange(aisle,product_rank) %>% 
+  knitr::kable(digits = 0)
+```
+
+4.The mean hour of day for Coffee Ice Cream is highest in Tuesday.The mean hour of day for Pink Lady Apples is highest in Wednesday.
+```{r,warning = FALSE}
+instacart %>%   
+  filter(product_name == c("Coffee Ice Cream","Pink Lady Apples"))%>%     
+  group_by(product_name,order_dow) %>%  
+  summarize(mean_hour = mean(order_hour_of_day)) %>%  
+  mutate(order_dow = order_dow + 1) %>% 
+  mutate(order_dow = lubridate::wday(order_dow, label = TRUE)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  ) %>% 
+  knitr::kable(digits = 2)
+```
+
+There are `r nrow(instacart)` and `r ncol(instacart)` in the instacart data. 
+The structure of data is shown by `str(instacart)` and gives us a preview of each column. The key variables are `r names(instacart)`. If we want some observations of data set, we can  look at `r skim(instacart)`.
