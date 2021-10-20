@@ -55,6 +55,7 @@ instacart %>%
   arrange(frequency) %>% 
   ggplot(aes(x = aisle, y = frequency)) +
   geom_point(aes(color = aisle))+
+  geom_blank()+
   labs(title = "number of items ordered in each aisle",
        x = "aisle with more than 10000 items",
        y = "number of items ordered") +
@@ -67,7 +68,7 @@ instacart %>%
 ```
 
 
-3. The most popular items in baking ingredients are light brown sugar,pure baking sodaand cane sugar. The most popular items in dog food care are snack sticks chicken &rice recipe dag treats, organix chicken & brown rice recipe, and small dog biscuits. The most popualar items in packaged vegetable fruits are oganic baby spinach, organic raspberries, and organic blueberries.
+3. The most popular items in baking ingredients are light brown sugar,pure baking soda and cane sugar. The most popular items in dog food care are snack sticks chicken &rice recipe dag treats, organix chicken & brown rice recipe, and small dog biscuits. The most popualar items in packaged vegetable fruits are oganic baby spinach, organic raspberries, and organic blueberries.
 ```{r}
 instacart %>% 
   select(aisle_id,aisle,product_name) %>% 
@@ -109,6 +110,7 @@ brfss_df=brfss_smart2010 %>%
   arrange(response)
   
 ```
+
 ```{r,warning=FALSE}
 brfss_df %>% 
   filter(year == c("2002","2010")) %>% 
@@ -117,7 +119,8 @@ brfss_df %>%
   summarize(frequency = n()) %>% 
   filter(frequency >= 7)
 ```
-In 2002, CT,MA,FL,NC,NJ,PA were observed at 7 or more locations. 
+
+1. In 2002, CT,MA,FL,NC,NJ,PA were observed at 7 or more locations. 
 In 2010, CA,CO,FL,MA,MD,NC,NE,NJ,NY,OH,PA,SC,TX,WA were observed at 7 or more locations.
 
 ```{r,warning = FALSE}
@@ -134,34 +137,81 @@ brfss_df %>%
   scale_color_hue(name = "locationabbr", h =c(100,300))
 ```
 
+2. Average data value for excellence fluctuate across years and across different states.
 
 ```{r}
 brfss_2006 = brfss_df %>% 
   filter(year == "2006", locationabbr == "NY") %>% 
   group_by(locationdesc,response) %>% 
-  ggplot(aes(x = response,y = data_value, color = locationdesc)) +
-  geom_point() +
+  ggplot(aes(x = data_value, fill = response)) +
+  geom_density() +
   labs(
    title = "Distribution Plot in 2006",
-    x = "responses",
-    y ="data value") +
-  theme(legend.position = "none")
+    x = "data_value") +
+  theme(legend.position = "right")
 
 brfss_2010 = brfss_df %>% 
   filter(year == "2010", locationabbr == "NY") %>% 
-  group_by(locationdesc,response) %>% 
-  ggplot(aes(x = response,y = data_value, color = locationdesc)) +
-  geom_point() +
+  ggplot(aes(x = data_value, fill = response)) +
+  geom_density() +
   labs(
    title = "Distribution Plot in 2010",
-    x = "responses",
-    y ="data value",
+    x = "data_value",
     caption = "Data from the p8105 datasets package") +
-  theme(legend.position = "bottom")
-
+    theme(legend.position = "none")
 brfss_2006 + brfss_2010
 
 ```
+
+3.Distribution plot among location in NY state in 2006 and in 2010 are slight different. For example, the distribution of fair has relatively higher median data value in 2006. However, the distribution of excellent has relatively higher median data value in 2010.
+
+## Problem 3
+
+
+```{r,warning=FALSE}
+accel_data = read_csv("./accel_data.csv") %>% 
+ janitor::clean_names() %>%
+ drop_na() %>% 
+pivot_longer(activity_1:activity_1440,
+               names_to = "time",
+               values_to = "count"
+               ) %>%    
+  mutate(weekends_weekday = ifelse(day %in% c("Sunday",   "Saturday"),"weekend","weekday")) %>% 
+  mutate(day = as.factor(day)) %>% 
+  separate(time,c("activity_","time"),"_") %>%
+  select(-activity_) %>% 
+  mutate(time=hms::as.hms (60 * as.numeric(time))) 
+```
+1. There are total `r nrow(accel_data)` and `r ncol(accel_data)`. The variables existing in the data set are `r names(accel_data)`. We add a new variable called weekend vs weekday into the data. The class of day has changed into factor. Time are organized in 24-hour time frame.
+
+```{r}
+accel_data %>% 
+  group_by(day_id,weekends_weekday) %>%
+  summarize(sum_count = sum(count)) %>% 
+  knitr::kable(digits = 0)
+```
+
+
+2.The day_id 24 and  day_id 31 has the lowest total activity count; and those day are weekend. The total activity count shows a decreasing trend on weekend from week 1 to week 5.
+
+```{r}
+accel_data %>% 
+  ggplot(aes(x = time, y = count, color = day)) +
+  geom_point()+
+  geom_line()+
+  labs(
+    title = "Accelerometer data plot for a 63 year-old male with BMI 25",
+    x = "24-hour window",
+    y ="activity count",
+    caption = "Data from the p8105 datasets package"
+  ) 
+```
+
+
+3.This man has a higher activity count at night around 8 pm on Friday and Wednesday.And he has a higher activity count at noon on Sunday.
+
+
+
 
 
 
